@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard · CxC / CxP</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#0f1419;--card:#1a2330;--card2:#212d3d;--line:#2d3b4e;--txt:#e8eef5;--muted:#8ba0b8;--accent:#ffd400;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--orange:#fb923c;--purple:#a78bfa;color-scheme:dark}
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);line-height:1.4}
+  header{padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  h1{margin:0;font-size:18px} h1 span{color:var(--blue)}
+  a.nav{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid var(--line);padding:7px 11px;border-radius:9px}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 4px}
+  select,input{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:14px}
+  .filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+  .filtros>div{flex:1;min-width:150px}
+  button{padding:10px 14px;border-radius:9px;border:none;font-size:14px;font-weight:600;cursor:pointer;background:var(--blue);color:#04152e}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:440px){.kpis{grid-template-columns:1fr}}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .kpi small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .kpi b{font-size:24px;font-weight:700}
+  .k-pagar b{color:var(--orange)}.k-cobrar b{color:var(--red)}.k-neto b{color:var(--green)}.k-cajas b{color:var(--blue)}.k-prods b{color:var(--txt)}.k-venta b{color:var(--purple)}
+  .k-prodtot b{color:var(--blue)}.k-recup b{color:var(--green)}.k-liquidado b{color:var(--purple)}.k-nliq b{color:var(--txt)}.k-anul b{color:var(--red)}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:720px){.charts{grid-template-columns:1fr}}
+  .chart-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .chart-card h3{margin:0 0 10px;font-size:14px;color:var(--muted);font-weight:600}
+  .chart-box{position:relative;height:240px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+  td.num,th.num{text-align:right}
+  .tbl-wrap{overflow-x:auto}.empty{color:var(--muted);text-align:center;padding:16px}
+  .warn{background:#3a2a00;border:1px solid #6b5000;color:#ffe27a;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none}
+  .neg{color:var(--red)}.pos{color:var(--green)}
+  .cols{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .cols label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txt);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer}
+  .exp-btns{display:flex;gap:8px;flex-wrap:wrap}
+  .exp-btns button{padding:8px 12px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px}
+  .b-mini{background:var(--card2);color:var(--txt);border:1px solid var(--line)!important}
+  .b-x{background:var(--green);color:#06210f}.b-p{background:var(--red);color:#fff}.b-bi{background:var(--accent);color:#111}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:18px;font-size:14px;line-height:1.6}
+  .modal h3{margin:0 0 10px;font-size:16px}
+  .modal .close{float:right;cursor:pointer;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:13px}
+  .modal code{background:var(--card2);padding:1px 6px;border-radius:5px;font-size:13px}
+  .modal .step{border-left:3px solid var(--accent);padding:4px 0 4px 12px;margin:10px 0}
+</style></head><body>
+<header>
+  <h1>Dashboard · <span>CxC / CxP</span></h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="nav" href="por-pagar.html">① Por Pagar</a>
+    <a class="nav" href="por-cobrar.html">② Por Cobrar</a>
+    <a class="nav" href="liquidacion.html">③ Liquidación</a>
+    <a class="nav" href="pagos.html">Pagos</a>
+    <a class="nav" href="index.html">Inicio</a>
+  </div>
+</header>
+<div class="wrap">
+  <div class="warn" id="warn"></div>
+
+  <div class="card">
+    <div class="filtros">
+      <div><label>Productor</label><select id="fProd"><option value="">Todos</option></select></div>
+      <div><label>Semana</label><select id="fSem"><option value="">Todas</option></select></div>
+      <div style="flex:0"><button id="btnReload">↻ Recargar</button></div>
+    </div>
+    <div class="muted" id="hint" style="color:var(--muted);font-size:12px;margin-top:8px"></div>
+  </div>
+
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi k-pagar"><small>Por pagar (pendiente)</small><b id="kPagar">$0,00</b></div>
+    <div class="kpi k-cobrar"><small>Por cobrar (saldo vivo)</small><b id="kCobrar">$0,00</b></div>
+    <div class="kpi k-neto"><small>Neto estimado</small><b id="kNeto">$0,00</b></div>
+    <div class="kpi k-cajas"><small>Cajas producción</small><b id="kCajas">0</b></div>
+    <div class="kpi k-prods"><small>Productores</small><b id="kProds">0</b></div>
+    <div class="kpi k-venta"><small>Ventas a empresa</small><b id="kVenta">$0,00</b></div>
+    <div class="kpi k-prodtot"><small>Producción total ($)</small><b id="kProdTot">$0,00</b></div>
+    <div class="kpi k-recup"><small>Recuperado de deudas</small><b id="kRecup">$0,00</b></div>
+    <div class="kpi k-liquidado"><small>Liquidado (neto)</small><b id="kLiquidado">$0,00</b></div>
+    <div class="kpi k-nliq"><small># Liquidaciones</small><b id="kNliq">0</b></div>
+    <div class="kpi k-anul"><small>Registros anulados</small><b id="kAnul">0</b></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <b>Exportar dashboard</b>
+      <div class="exp-btns">
+        <button class="b-mini" id="kTodo">Todo</button>
+        <button class="b-mini" id="kNada">Ninguno</button>
+        <button class="b-x" id="btnXls">📊 Excel</button>
+        <button class="b-p" id="btnPdf">📄 PDF</button>
+        <button class="b-bi" id="btnBi">🔗 Power BI</button>
+      </div>
+    </div>
+    <div style="color:var(--muted);font-size:12px;margin-top:8px">Elige qué KPIs mostrar y exportar:</div>
+    <div class="cols" id="kpiBox"></div>
+  </div>
+
+  <div class="charts" style="margin-bottom:16px">
+    <div class="chart-card"><h3>Producción ($) por semana</h3><div class="chart-box"><canvas id="chSem"></canvas></div></div>
+    <div class="chart-card"><h3>Deudas por tipo (saldo)</h3><div class="chart-box"><canvas id="chTipo"></canvas></div></div>
+    <div class="chart-card" style="grid-column:1/-1"><h3>Producción ($) por productor</h3><div class="chart-box"><canvas id="chProd"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <b>Resumen por productor</b>
+    <div class="tbl-wrap" style="margin-top:10px"><table id="tblResumen">
+      <thead><tr><th>Productor</th><th class="num">Prod. pendiente</th><th class="num">Deuda (saldo)</th><th class="num">Neto</th></tr></thead>
+      <tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <b>Deudas abiertas (saldo &gt; 0)</b>
+    <div class="tbl-wrap" style="margin-top:10px"><table id="tblDeudas">
+      <thead><tr><th>ID</th><th>Productor</th><th>Tipo</th><th>Concepto</th><th>Empresa</th><th class="num">Saldo</th></tr></thead>
+      <tbody></tbody></table></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal">
+  <span class="close" id="modalClose">✕ cerrar</span>
+  <h3 id="modalTit">Conectar Power BI</h3>
+  <div id="modalBody"></div>
+</div></div>
+<script>
+const SB_URL="https://knmkgioepiaekymibyla.supabase.co";
+const SB_KEY="sb_publishable_qNt_9W6-XO-aI99jzS4pxw_8ItU4Euu";
+const SB_H={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY};
+const $=id=>document.getElementById(id);
+const money=n=>"$"+(isNaN(n)?0:n).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2});
+const norm=s=>(""+s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const TIPO_LBL={venta_insumo:"Venta insumo",anticipo:"Anticipo",prestamo:"Préstamo",venta_banano:"Venta banano"};
+const COL={venta_insumo:"#3b82f6",anticipo:"#fb923c",prestamo:"#ef4444",venta_banano:"#a78bfa"};
+const sum=(arr,f)=>arr.reduce((s,x)=>s+(+f(x)||0),0);
+function warn(m){const w=$("warn");if(!m){w.style.display="none";return;}w.style.display="block";w.innerHTML=m;}
+
+let PROD=[], COB=[], LIQ=[], charts={}, RESUMEN=[], DEUDAS_OPEN=[];
+Chart.defaults.color="#8ba0b8";Chart.defaults.borderColor="#2d3b4e";Chart.defaults.font.family="system-ui,Segoe UI,Roboto,sans-serif";
+
+async function cargar(){
+  warn("");$("hint").textContent="Cargando…";
+  try{
+    const g=async t=>{const r=await fetch(SB_URL+"/rest/v1/"+t+"?select=*",{headers:SB_H});if(!r.ok)throw new Error(t+" HTTP "+r.status);return r.json();};
+    [PROD,COB,LIQ]=await Promise.all([g("produccion"),g("cobros"),g("liquidaciones")]);
+  }catch(e){warn("⚠️ "+e.message);$("hint").textContent="";return;}
+  // Opciones de filtro
+  const prods=[...new Set([...PROD.map(p=>p.productor),...COB.map(c=>c.productor)].filter(Boolean))].sort();
+  const sems=[...new Set(PROD.map(p=>p.semana).filter(Boolean))].sort((a,b)=>(+((a.match(/\d+/)||[0])[0]))-(+((b.match(/\d+/)||[0])[0])));
+  const keep=(sel,val)=>{sel.innerHTML=(sel.id==="fProd"?'<option value="">Todos</option>':'<option value="">Todas</option>')+ (sel.id==="fProd"?prods:sems).map(v=>`<option${v===val?" selected":""}>${v}</option>`).join("");};
+  keep($("fProd"),$("fProd").value);keep($("fSem"),$("fSem").value);
+  $("hint").textContent="Datos en vivo desde Supabase · "+PROD.length+" producción · "+COB.length+" cobros · "+LIQ.length+" liquidaciones";
+  render();
+}
+function filtros(){return {prod:$("fProd").value, sem:$("fSem").value};}
+function matchProd(p,f){return !p.anulado && (!f.prod||norm(p.productor)===norm(f.prod)) && (!f.sem||p.semana===f.sem);}
+function matchCob(c,f){return !c.anulado && (!f.prod||norm(c.productor)===norm(f.prod));} // deudas por productor (el saldo se arrastra entre semanas)
+function matchLiq(l,f){return !l.anulado && (!f.prod||norm(l.productor)===norm(f.prod)) && (!f.sem||l.periodo===f.sem);}
+
+function render(){
+  const f=filtros();
+  const prod=PROD.filter(p=>matchProd(p,f));
+  const cob=COB.filter(c=>matchCob(c,f));
+  const liq=LIQ.filter(l=>matchLiq(l,f));
+  const prodPend=prod.filter(p=>(p.estado||"pendiente")!=="liquidado");
+  // KPIs
+  const porPagar=sum(prodPend,p=>p.saldo!=null?p.saldo:p.valor);
+  const porCobrar=sum(cob,c=>c.saldo);
+  $("kPagar").textContent=money(porPagar);
+  $("kCobrar").textContent=money(porCobrar);
+  $("kNeto").textContent=money(porPagar-porCobrar);
+  $("kCajas").textContent=sum(prod,p=>p.cajas).toLocaleString("es-EC");
+  $("kProds").textContent=new Set([...prod.map(p=>p.productor),...cob.map(c=>c.productor)].filter(Boolean)).size;
+  $("kVenta").textContent=money(sum(cob.filter(c=>c.tipo==="venta_banano"),c=>c.valor));
+  $("kProdTot").textContent=money(sum(prod,p=>p.valor));
+  $("kRecup").textContent=money(sum(cob,c=>c.pagado));
+  $("kLiquidado").textContent=money(sum(liq,l=>l.neto_a_pagar));
+  $("kNliq").textContent=liq.length;
+  const fp=filtros();
+  const anulProd=PROD.filter(p=>p.anulado&&(!fp.prod||norm(p.productor)===norm(fp.prod))).length;
+  const anulCob=COB.filter(c=>c.anulado&&(!fp.prod||norm(c.productor)===norm(fp.prod))).length;
+  const anulLiq=LIQ.filter(l=>l.anulado&&(!fp.prod||norm(l.productor)===norm(fp.prod))).length;
+  $("kAnul").textContent=anulProd+anulCob+anulLiq;
+
+  // Chart: producción por semana
+  const bySem={};prod.forEach(p=>{const k=p.semana||"—";bySem[k]=(bySem[k]||0)+(+p.valor||0);});
+  const semK=Object.keys(bySem).sort((a,b)=>(+((a.match(/\d+/)||[0])[0]))-(+((b.match(/\d+/)||[0])[0])));
+  drawBar("chSem",semK,semK.map(k=>bySem[k]),"#3b82f6");
+
+  // Chart: deudas por tipo
+  const byTipo={};cob.forEach(c=>{if((+c.saldo||0)>0){const k=c.tipo||"otro";byTipo[k]=(byTipo[k]||0)+(+c.saldo||0);}});
+  const tk=Object.keys(byTipo);
+  drawDoughnut("chTipo",tk.map(k=>TIPO_LBL[k]||k),tk.map(k=>byTipo[k]),tk.map(k=>COL[k]||"#8ba0b8"));
+
+  // Chart: producción por productor
+  const byProd={};prod.forEach(p=>{const k=p.productor||"—";byProd[k]=(byProd[k]||0)+(+p.valor||0);});
+  const pk=Object.keys(byProd).sort((a,b)=>byProd[b]-byProd[a]);
+  drawBar("chProd",pk,pk.map(k=>byProd[k]),"#22c55e");
+
+  // Tabla resumen por productor
+  const nombres=[...new Set([...prod.map(p=>p.productor),...cob.map(c=>c.productor)].filter(Boolean))].sort();
+  RESUMEN=nombres.map(n=>{
+    const pp=sum(prodPend.filter(p=>p.productor===n),p=>p.saldo!=null?p.saldo:p.valor);
+    const dd=sum(cob.filter(c=>c.productor===n),c=>c.saldo);
+    return {Productor:n,"Produccion pendiente":pp,"Deuda saldo":dd,Neto:pp-dd};
+  });
+  const trb=$("tblResumen").tBodies[0];
+  trb.innerHTML=RESUMEN.length?RESUMEN.map(r=>`<tr><td>${r.Productor}</td><td class="num">${money(r["Produccion pendiente"])}</td><td class="num">${money(r["Deuda saldo"])}</td><td class="num ${r.Neto<0?'neg':'pos'}">${money(r.Neto)}</td></tr>`).join(""):`<tr><td colspan="4" class="empty">Sin datos</td></tr>`;
+
+  // Tabla deudas abiertas
+  const abiertas=cob.filter(c=>(+c.saldo||0)>0.005).sort((a,b)=>(+b.saldo||0)-(+a.saldo||0));
+  DEUDAS_OPEN=abiertas.map(c=>({ID:c.id,Productor:c.productor||"",Tipo:TIPO_LBL[c.tipo]||c.tipo||"",Concepto:c.concepto||"",Empresa:c.venta_empresa||"",Saldo:+c.saldo||0}));
+  const tdb=$("tblDeudas").tBodies[0];
+  tdb.innerHTML=DEUDAS_OPEN.length?DEUDAS_OPEN.map(c=>`<tr><td>#${c.ID}</td><td>${c.Productor||"—"}</td>
+    <td>${c.Tipo||"—"}</td><td>${c.Concepto||"—"}</td><td>${c.Empresa||"—"}</td>
+    <td class="num">${money(c.Saldo)}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Sin deudas abiertas</td></tr>`;
+}
+
+function drawBar(id,labels,data,color){
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart($(id),{type:"bar",data:{labels,datasets:[{data,backgroundColor:color,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>money(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>"$"+v}},x:{ticks:{autoSkip:false,maxRotation:60,minRotation:0}}}}});
+}
+function drawDoughnut(id,labels,data,colors){
+  if(charts[id])charts[id].destroy();
+  if(!data.length){charts[id]=new Chart($(id),{type:"doughnut",data:{labels:["Sin deudas"],datasets:[{data:[1],backgroundColor:["#2d3b4e"]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});return;}
+  charts[id]=new Chart($(id),{type:"doughnut",data:{labels,datasets:[{data,backgroundColor:colors}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.label+": "+money(c.parsed)}}}}});
+}
+
+$("fProd").onchange=render;$("fSem").onchange=render;$("btnReload").onclick=cargar;
+
+// ---- Selector de KPIs + exportación ----
+const KPIS=[
+ {k:"kPagar",l:"Por pagar (pendiente)"},{k:"kCobrar",l:"Por cobrar (saldo vivo)"},{k:"kNeto",l:"Neto estimado"},
+ {k:"kCajas",l:"Cajas producción"},{k:"kProds",l:"Productores"},{k:"kVenta",l:"Ventas a empresa"},
+ {k:"kProdTot",l:"Producción total ($)"},{k:"kRecup",l:"Recuperado de deudas"},{k:"kLiquidado",l:"Liquidado (neto)"},
+ {k:"kNliq",l:"# Liquidaciones"},{k:"kAnul",l:"Registros anulados"}
+];
+$("kpiBox").innerHTML=KPIS.map(x=>`<label><input type="checkbox" class="kpichk" value="${x.k}" checked> ${x.l}</label>`).join("");
+const selKpis=()=>KPIS.filter(x=>document.querySelector('.kpichk[value="'+x.k+'"]').checked);
+function applyKpiVis(){KPIS.forEach(x=>{const on=document.querySelector('.kpichk[value="'+x.k+'"]').checked;const card=$(x.k).closest(".kpi");if(card)card.style.display=on?"":"none";});}
+document.querySelectorAll(".kpichk").forEach(c=>c.addEventListener("change",applyKpiVis));
+$("kTodo").onclick=()=>{document.querySelectorAll(".kpichk").forEach(c=>c.checked=true);applyKpiVis();};
+$("kNada").onclick=()=>{document.querySelectorAll(".kpichk").forEach(c=>c.checked=false);applyKpiVis();};
+const kpiRows=()=>selKpis().map(x=>({KPI:x.l,Valor:$(x.k).textContent}));
+const ctxFiltro=()=>{const f=filtros();return "Productor: "+(f.prod||"Todos")+" · Semana: "+(f.sem||"Todas");};
+
+$("btnXls").onclick=()=>{
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(kpiRows().length?kpiRows():[{KPI:"—",Valor:"—"}]),"KPIs");
+  if(RESUMEN.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(RESUMEN),"Resumen productor");
+  if(DEUDAS_OPEN.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(DEUDAS_OPEN),"Deudas abiertas");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(PROD.length?PROD:[{}]),"Produccion");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(COB.length?COB:[{}]),"Cobros");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(LIQ.length?LIQ:[{}]),"Liquidaciones");
+  XLSX.writeFile(wb,"dashboard.xlsx");
+};
+$("btnPdf").onclick=()=>{
+  const kh=kpiRows().map(r=>`<div class="pk"><small>${r.KPI}</small><b>${r.Valor}</b></div>`).join("")||"<i>(sin KPIs seleccionados)</i>";
+  const tbl=(t,arr,fmt)=>{if(!arr.length)return"";const cols=Object.keys(arr[0]);return `<h3>${t}</h3><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${arr.map(r=>`<tr>${cols.map(c=>`<td>${fmt&&typeof r[c]==="number"?money(r[c]):(r[c]??"")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;};
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Dashboard</title><style>body{font-family:sans-serif;padding:20px;color:#111}.kp{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.pk{border:1px solid #ccc;border-radius:8px;padding:8px 12px;min-width:130px}.pk small{display:block;color:#666;font-size:11px}.pk b{font-size:18px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}th,td{border:1px solid #999;padding:5px;text-align:left}th{background:#eee}h3{margin:12px 0 6px}</style></head><body><h2>Dashboard · CxC / CxP</h2><div>${ctxFiltro()} · Generado ${new Date().toLocaleString("es-EC")}</div><div class="kp">${kh}</div>${tbl("Resumen por productor",RESUMEN,true)}${tbl("Deudas abiertas",DEUDAS_OPEN,true)}</body></html>`);
+  w.document.close();setTimeout(()=>w.print(),300);
+};
+const SB_REF=(SB_URL.match(/https?:\/\/([^.]+)\./)||[])[1]||"";
+$("btnBi").onclick=()=>{
+  $("modalBody").innerHTML=`
+    <div class="step"><b>Opción A — En vivo (recomendada)</b><br>Power BI Desktop → <i>Obtener datos</i> → <i>Base de datos PostgreSQL</i>:<br>
+    • Servidor: <code>db.${SB_REF}.supabase.co</code><br>• Puerto: <code>5432</code> · Base de datos: <code>postgres</code><br>
+    • Usuario: <code>postgres</code> · Contraseña: la de <i>Supabase → Settings → Database → Database password</i><br>
+    • Tablas: <code>produccion</code>, <code>cobros</code>, <code>liquidaciones</code>, <code>auditoria</code><br>
+    <span style="color:var(--muted)">Se actualiza solo: los cambios en la app aparecen en Power BI al refrescar.</span></div>
+    <div class="step"><b>Opción B — Rápida (archivo)</b><br>Usa el botón <b>📊 Excel</b>: genera un .xlsx con varias hojas (KPIs, Resumen, Deudas y los datos crudos) que Power BI importa con <i>Obtener datos → Excel</i>.</div>`;
+  $("modalTit").textContent="Conectar Power BI";
+  $("modalBg").classList.add("open");
+};
+$("modalClose").onclick=()=>$("modalBg").classList.remove("open");
+$("modalBg").onclick=e=>{if(e.target===$("modalBg"))$("modalBg").classList.remove("open");};
+
+cargar();
+</script>
+</body></html>

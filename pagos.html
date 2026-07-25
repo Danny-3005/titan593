@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pagos · Soportes</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#0f1419;--card:#1a2330;--card2:#212d3d;--line:#2d3b4e;--txt:#e8eef5;--muted:#8ba0b8;--accent:#ffd400;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--orange:#fb923c;--purple:#a78bfa;--teal:#2dd4bf;color-scheme:dark}
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);line-height:1.4}
+  header{padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  h1{margin:0;font-size:18px} h1 span{color:var(--teal)}
+  a.nav{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid var(--line);padding:7px 11px;border-radius:9px}
+  .wrap{max-width:960px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 4px}
+  input,textarea,select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;font-family:inherit}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);border-color:transparent}
+  input[type=file]{padding:7px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button.act{padding:11px 14px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+  .b-save{background:var(--teal);color:#04241f}.b-clear{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+  .falta{background:var(--card2);border-radius:12px;padding:12px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+  .falta b{font-size:22px;color:var(--teal)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+  td.num,th.num{text-align:right}
+  .tbl-wrap{overflow-x:auto}.idlink{color:var(--accent);cursor:pointer;text-decoration:underline;font-weight:600}
+  .empty{color:var(--muted);text-align:center;padding:16px}
+  .link{color:var(--blue);text-decoration:underline}
+  .exp{background:var(--card2);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px}
+  .cols{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .cols label{display:flex;align-items:center;gap:5px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--txt);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;margin:0}
+  .exp-btns{display:flex;gap:8px;flex-wrap:wrap}
+  .b-x{background:var(--green);color:#06210f}.b-p{background:var(--red);color:#fff}.b-mini{background:var(--card);color:var(--txt);border:1px solid var(--line)}
+  .exp-btns button{padding:7px 12px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px}
+  .warn{background:#3a2a00;border:1px solid #6b5000;color:#ffe27a;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none}
+  .estado{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line)}
+  .est-anulado{color:var(--red);text-decoration:line-through}
+  tr.anulado td{opacity:.45}
+  .act-btns{white-space:nowrap}
+  .act-btns button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:3px 7px;font-size:12px;cursor:pointer;margin:0 1px}
+  .act-btns .del{color:var(--red)}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:14px;max-width:640px;width:100%;max-height:82vh;overflow:auto;padding:16px}
+  .modal h3{margin:0 0 12px;font-size:15px}.modal .close{float:right;cursor:pointer;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:13px}
+  .aud-item{border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}.aud-when{color:var(--muted);font-size:12px;margin-bottom:3px}
+  .aud-acc{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);margin-right:6px}
+  .a-INSERT{color:var(--green)}.a-UPDATE{color:var(--accent)}.a-DELETE{color:var(--red)}
+  .chg{margin:2px 0}.chg b{color:var(--muted);font-weight:600}
+  .muted{color:var(--muted);font-size:13px}
+</style></head><body>
+<header>
+  <h1>Pagos · <span>Soportes</span></h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="nav" href="index.html">Inicio</a>
+    <a class="nav" href="liquidacion.html">③ Liquidación</a>
+    <a class="nav" href="dashboard.html">Dashboard</a>
+  </div>
+</header>
+<div class="wrap">
+  <div class="warn" id="warn"></div>
+
+  <div class="card">
+    <b>Registrar pago</b>
+    <div class="grid" style="margin-top:10px">
+      <div style="grid-column:1/-1"><label>Liquidación a pagar</label><select id="f_liq"><option value="">— elige —</option></select></div>
+      <div><label>Método</label>
+        <select id="f_metodo"><option value="transferencia">Transferencia</option><option value="cheque">Cheque</option><option value="efectivo">Efectivo</option></select></div>
+      <div><label>N° documento</label><input id="f_doc" placeholder="N° cheque / referencia"></div>
+      <div><label>Monto</label><input id="f_monto" inputmode="decimal" placeholder="0,00"></div>
+      <div><label>Fecha de pago</label><input id="f_fecha" type="date"></div>
+      <div><label># Factura</label><input id="f_factura" placeholder="000123"></div>
+      <div><label>Fecha factura</label><input id="f_fechafac" type="date"></div>
+      <div style="grid-column:1/-1"><label>Comprobante (foto o PDF)</label><input id="f_soporte" type="file" accept="image/*,application/pdf"></div>
+    </div>
+    <div style="margin-top:10px"><label>Observaciones</label><textarea id="f_obs" rows="2" placeholder="Nota libre (opcional)"></textarea></div>
+    <div class="falta"><span id="faltaLbl">Falta por pagar de la liquidación</span><b id="f_falta">$0,00</b></div>
+    <div class="btns">
+      <button class="act b-save" id="btnSave">✓ Guardar pago</button>
+      <button class="act b-clear" id="btnClear">Limpiar</button>
+    </div>
+    <div class="muted" id="upHint" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <b>Pagos registrados</b>
+      <input id="buscar" placeholder="Buscar…" style="max-width:240px">
+    </div>
+    <div class="exp">
+      <b style="font-size:12px">Exportar</b> — marca columnas (o "Todo"):
+      <div class="cols" id="colsBox"></div>
+      <div class="exp-btns">
+        <button class="b-mini" id="btnTodo">Todo</button>
+        <button class="b-mini" id="btnNada">Ninguno</button>
+        <button class="b-x" id="btnExcel">📊 Excel (.xlsx)</button>
+        <button class="b-p" id="btnPDF">📄 PDF</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tbl">
+      <thead><tr><th>ID</th><th>Fecha</th><th>Liq.</th><th>Productor</th><th>Método</th><th>N° Doc</th><th class="num">Monto</th>
+        <th># Fact.</th><th>F. Factura</th><th>Comprobante</th><th>Estado liq.</th><th>Observaciones</th><th>Acc.</th></tr></thead>
+      <tbody></tbody></table></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal">
+  <span class="close" id="modalClose">✕ cerrar</span>
+  <h3 id="modalTit">Historial</h3>
+  <div id="modalBody"></div>
+</div></div>
+
+<script>
+const SB_URL="https://knmkgioepiaekymibyla.supabase.co";
+const SB_KEY="sb_publishable_qNt_9W6-XO-aI99jzS4pxw_8ItU4Euu";
+const SB_H={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"};
+const SB_HF={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}; // sin content-type (para upload)
+const $=id=>document.getElementById(id);
+const money=n=>"$"+(isNaN(n)?0:n).toLocaleString("es-EC",{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=v=>{if(v==null)return 0;v=(""+v).replace(/[^0-9.,]/g,"").replace(/\.(?=\d{3}\b)/g,"").replace(",",".");const n=parseFloat(v);return isNaN(n)?0:n;};
+const round2=n=>Math.round((+n||0)*100)/100;
+function warn(m){const w=$("warn");if(!m){w.style.display="none";return;}w.style.display="block";w.innerHTML=m;}
+
+let pagos=[], liqs=[], pagadoPorLiq={}, filtro="";
+const METODO_LBL={transferencia:"Transferencia",cheque:"Cheque",efectivo:"Efectivo"};
+
+async function cargar(){
+  try{
+    const [rl,rp]=await Promise.all([
+      fetch(SB_URL+"/rest/v1/liquidaciones?select=*&order=id.desc",{headers:SB_H}),
+      fetch(SB_URL+"/rest/v1/pagos?select=*&order=id.desc",{headers:SB_H})
+    ]);
+    if(!rl.ok)throw new Error("liquidaciones HTTP "+rl.status);
+    if(!rp.ok)throw new Error("pagos HTTP "+rp.status);
+    liqs=await rl.json(); pagos=await rp.json();
+  }catch(e){$("tbl").tBodies[0].innerHTML=`<tr><td colspan="13" class="empty">⚠️ ${e.message}</td></tr>`;return;}
+  pagadoPorLiq={};
+  pagos.filter(p=>!p.anulado).forEach(p=>{pagadoPorLiq[p.liquidacion_id]=(pagadoPorLiq[p.liquidacion_id]||0)+(+p.monto||0);});
+  // select de liquidaciones no anuladas con saldo por pagar
+  const opts=liqs.filter(l=>!l.anulado).map(l=>{
+    const falta=round2((+l.neto_a_pagar||0)-(pagadoPorLiq[l.id]||0));
+    return {l,falta};
+  });
+  $("f_liq").innerHTML='<option value="">— elige —</option>'+opts.map(o=>
+    `<option value="${o.l.id}" data-neto="${o.l.neto_a_pagar||0}" data-falta="${o.falta}">#${o.l.id} · ${o.l.productor||"—"} · neto ${money(o.l.neto_a_pagar)} · falta ${money(o.falta)}</option>`).join("");
+  pintar();
+}
+$("f_liq").onchange=()=>{
+  const op=$("f_liq").selectedOptions[0]; const falta=op?+op.dataset.falta||0:0;
+  $("f_falta").textContent=money(falta);
+  if(falta>0 && !num($("f_monto").value)) $("f_monto").value=String(falta).replace(".",",");
+};
+
+function nombreLiq(id){const l=liqs.find(x=>x.id===id);return l?l.productor:"";}
+function pintar(){
+  const f=filtro.toLowerCase(),tb=$("tbl").tBodies[0];
+  const vis=pagos.filter(r=>!f||(["#"+r.id,nombreLiq(r.liquidacion_id),r.metodo,r.num_documento,r.observaciones].join(" ").toLowerCase()).includes(f));
+  const estadoLiq=id=>{const l=liqs.find(x=>x.id===id);return l?(l.estado||"pendiente"):"—";};
+  tb.innerHTML=vis.length?vis.map(r=>`<tr class="${r.anulado?'anulado':''}">
+    <td>#${r.id}</td><td>${(r.fecha||"").slice(0,10)}</td><td>#${r.liquidacion_id}</td><td>${nombreLiq(r.liquidacion_id)||"—"}</td>
+    <td>${METODO_LBL[r.metodo]||r.metodo||"—"}</td><td>${r.num_documento||"—"}</td><td class="num">${money(r.monto)}</td>
+    <td>${r.num_factura||"—"}</td><td>${(r.fecha_factura||"").slice(0,10)||"—"}</td>
+    <td>${r.soporte_url?`<a class="link" href="${r.soporte_url}" target="_blank">ver</a>`:"—"}</td>
+    <td>${r.anulado?'<span class="estado est-anulado">anulado</span>':`<span class="estado">${estadoLiq(r.liquidacion_id)}</span>`}</td>
+    <td>${r.observaciones||"—"}</td>
+    <td class="act-btns"><button title="Historial" onclick="verHist('pagos',${r.id})">🕘</button>${r.anulado?`<button onclick="restaurarPago(${r.id})">restaurar</button>`:`<button onclick="anularPago(${r.id})">anular</button>`}<button class="del" title="Eliminar" onclick="eliminarPago(${r.id})">🗑</button></td>
+    </tr>`).join(""):`<tr><td colspan="13" class="empty">${pagos.length?"Sin coincidencias":"Sin pagos aún"}</td></tr>`;
+}
+cargar();
+$("buscar").addEventListener("keyup",()=>{filtro=$("buscar").value.trim();pintar();});
+
+async function subirSoporte(file,liqId){
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const path="pago-"+liqId+"-"+Date.now()+"-"+safe;
+  const r=await fetch(SB_URL+"/storage/v1/object/soportes/"+path,{method:"POST",headers:SB_HF,body:file});
+  if(!r.ok)throw new Error("subir comprobante HTTP "+r.status+" — ¿creaste el bucket 'soportes' en Supabase Storage?");
+  return SB_URL+"/storage/v1/object/public/soportes/"+path;
+}
+async function recalcEstadoLiq(liqId){
+  const [rl,rp]=await Promise.all([
+    fetch(SB_URL+"/rest/v1/liquidaciones?id=eq."+liqId+"&select=neto_a_pagar,anulado",{headers:SB_H}),
+    fetch(SB_URL+"/rest/v1/pagos?liquidacion_id=eq."+liqId+"&select=monto,anulado",{headers:SB_H})
+  ]);
+  const l=(await rl.json())[0]; if(!l||l.anulado)return;
+  const neto=+l.neto_a_pagar||0;
+  const pagado=(await rp.json()).filter(p=>!p.anulado).reduce((s,p)=>s+(+p.monto||0),0);
+  const estado=(neto>0 && pagado>=neto-0.005)?"pagado":(pagado>0.005?"parcial":"pendiente");
+  await fetch(SB_URL+"/rest/v1/liquidaciones?id=eq."+liqId,{method:"PATCH",headers:SB_H,body:JSON.stringify({estado})});
+}
+
+$("btnSave").onclick=async()=>{
+  warn("");
+  const liqId=+$("f_liq").value;
+  if(!liqId){warn("⚠️ Elige la liquidación a pagar.");return;}
+  const monto=num($("f_monto").value);
+  if(monto<=0){warn("⚠️ Ingresa un monto mayor a 0.");return;}
+  const btn=$("btnSave");btn.disabled=true;$("upHint").textContent="Guardando…";
+  try{
+    let soporte_url=null;
+    const file=$("f_soporte").files[0];
+    if(file){$("upHint").textContent="Subiendo comprobante…";soporte_url=await subirSoporte(file,liqId);}
+    const body={liquidacion_id:liqId,fecha:$("f_fecha").value||null,metodo:$("f_metodo").value,num_documento:$("f_doc").value||null,
+      monto:round2(monto),soporte_url,observaciones:$("f_obs").value||null,num_factura:$("f_factura").value||null,fecha_factura:$("f_fechafac").value||null};
+    const r=await fetch(SB_URL+"/rest/v1/pagos",{method:"POST",headers:SB_H,body:JSON.stringify(body)});
+    if(!r.ok)throw new Error("guardar pago HTTP "+r.status+" "+(await r.text()).slice(0,120));
+    await recalcEstadoLiq(liqId);
+    $("upHint").textContent="";limpiar();await cargar();
+  }catch(e){warn("⚠️ "+e.message);$("upHint").textContent="";}
+  finally{btn.disabled=false;}
+};
+$("btnClear").onclick=()=>limpiar();
+function limpiar(){["f_doc","f_monto","f_fecha","f_factura","f_fechafac","f_obs"].forEach(id=>$(id).value="");$("f_soporte").value="";$("f_metodo").value="transferencia";$("f_liq").value="";$("f_falta").textContent=money(0);}
+
+async function anularPago(id){
+  const p=pagos.find(x=>x.id===id);
+  if(!confirm("¿Anular el pago #"+id+"? Sale de los totales; la liquidación se recalcula."))return;
+  const r=await fetch(SB_URL+"/rest/v1/pagos?id=eq."+id,{method:"PATCH",headers:SB_H,body:JSON.stringify({anulado:true})});
+  if(!r.ok){alert("Error HTTP "+r.status);return;}
+  if(p)await recalcEstadoLiq(p.liquidacion_id); await cargar();
+}
+async function restaurarPago(id){
+  const p=pagos.find(x=>x.id===id);
+  const r=await fetch(SB_URL+"/rest/v1/pagos?id=eq."+id,{method:"PATCH",headers:SB_H,body:JSON.stringify({anulado:false})});
+  if(!r.ok){alert("Error HTTP "+r.status);return;}
+  if(p)await recalcEstadoLiq(p.liquidacion_id); await cargar();
+}
+async function eliminarPago(id){
+  const p=pagos.find(x=>x.id===id);
+  if(!confirm("⚠️ ELIMINAR definitivamente el pago #"+id+"?"))return;
+  if(!confirm("Confirma otra vez: borrar #"+id+" para siempre."))return;
+  const r=await fetch(SB_URL+"/rest/v1/pagos?id=eq."+id,{method:"DELETE",headers:SB_H});
+  if(!r.ok){alert("Error HTTP "+r.status);return;}
+  if(p)await recalcEstadoLiq(p.liquidacion_id); await cargar();
+}
+
+// ---- Historial ----
+const AUD_LBL={liquidacion_id:"Liquidación",fecha:"Fecha",metodo:"Método",num_documento:"N° documento",monto:"Monto",soporte_url:"Comprobante",observaciones:"Observaciones",num_factura:"# Factura",fecha_factura:"Fecha factura",anulado:"Anulado",creado:"Creado"};
+const audVal=v=>v===null||v===undefined?"—":(typeof v==="boolean"?(v?"sí":"no"):(""+v));
+async function verHist(tabla,id){
+  $("modalTit").textContent="Historial · "+tabla+" #"+id;$("modalBody").innerHTML="Cargando…";$("modalBg").classList.add("open");
+  try{
+    const r=await fetch(SB_URL+"/rest/v1/auditoria?tabla=eq."+tabla+"&registro_id=eq."+id+"&order=cuando.desc",{headers:SB_H});
+    if(!r.ok)throw new Error("HTTP "+r.status);const rows=await r.json();
+    if(!rows.length){$("modalBody").innerHTML='<div class="empty">Sin cambios registrados. (¿Corriste db/schema-v2-auditoria.sql?)</div>';return;}
+    $("modalBody").innerHTML=rows.map(a=>{const when=new Date(a.cuando).toLocaleString("es-EC");let det="";
+      if(a.accion==="UPDATE"&&a.campos)det=Object.entries(a.campos).filter(([k])=>k!=="creado").map(([k,v])=>`<div class="chg"><b>${AUD_LBL[k]||k}:</b> ${audVal(v.antes)} → ${audVal(v.despues)}</div>`).join("")||'<div class="chg">(sin cambios visibles)</div>';
+      else if(a.accion==="INSERT")det='<div class="chg">Registro creado</div>';else if(a.accion==="DELETE")det='<div class="chg">Registro eliminado</div>';
+      return `<div class="aud-item"><div class="aud-when">${when}</div><span class="aud-acc a-${a.accion}">${a.accion}</span>${det}</div>`;}).join("");
+  }catch(e){$("modalBody").innerHTML='<div class="empty">⚠️ '+e.message+'</div>';}
+}
+$("modalClose").onclick=()=>$("modalBg").classList.remove("open");
+$("modalBg").onclick=e=>{if(e.target===$("modalBg"))$("modalBg").classList.remove("open");};
+
+// ---- Exportar ----
+const expVal=v=>v===true?"Sí":v===false?"No":v;
+const COLS=[{k:"id",l:"ID"},{k:"fecha",l:"Fecha"},{k:"liquidacion_id",l:"Liquidación"},{k:"productor",l:"Productor"},{k:"metodo",l:"Método"},{k:"num_documento",l:"N° documento"},{k:"monto",l:"Monto"},{k:"num_factura",l:"# Factura"},{k:"fecha_factura",l:"Fecha factura"},{k:"soporte_url",l:"Comprobante"},{k:"observaciones",l:"Observaciones"},{k:"anulado",l:"Anulado"}];
+$("colsBox").innerHTML=COLS.map(c=>`<label><input type="checkbox" class="colchk" value="${c.k}" checked> ${c.l}</label>`).join("");
+const selCols=()=>COLS.filter(c=>document.querySelector('.colchk[value="'+c.k+'"]').checked);
+$("btnTodo").onclick=()=>document.querySelectorAll('.colchk').forEach(c=>c.checked=true);
+$("btnNada").onclick=()=>document.querySelectorAll('.colchk').forEach(c=>c.checked=false);
+function rowExp(r){return {...r, productor:nombreLiq(r.liquidacion_id), metodo:METODO_LBL[r.metodo]||r.metodo};}
+function datosExport(){const cols=selCols();if(!cols.length){alert("Marca al menos una columna.");return null;}
+  return {cols, rows:pagos.map(r0=>{const r=rowExp(r0);const o={};cols.forEach(c=>o[c.l]=expVal(r[c.k]));return o;})};}
+$("btnExcel").onclick=()=>{const d=datosExport();if(!d)return;if(!pagos.length){alert("No hay datos.");return;}
+  const ws=XLSX.utils.json_to_sheet(d.rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Pagos");XLSX.writeFile(wb,"pagos.xlsx");};
+$("btnPDF").onclick=()=>{const d=datosExport();if(!d)return;if(!pagos.length){alert("No hay datos.");return;}
+  const th=d.cols.map(c=>`<th>${c.l}</th>`).join("");
+  const tr=d.rows.map(r=>`<tr>${d.cols.map(c=>`<td>${r[c.l]??""}</td>`).join("")}</tr>`).join("");
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Pagos</title><style>body{font-family:sans-serif;padding:20px}h2{margin:0 0 4px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #999;padding:5px;text-align:left}th{background:#eee}</style></head><body><h2>Pagos · Soportes</h2><div>Generado ${new Date().toLocaleString("es-EC")}</div><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></body></html>`);
+  w.document.close();setTimeout(()=>w.print(),300);};
+</script>
+</body></html>
