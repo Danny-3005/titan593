@@ -9,21 +9,18 @@
   .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#ff9d00);display:flex;align-items:center;justify-content:center;color:#111;font-weight:900}
   .brand small{display:block;font-weight:500;font-size:10px;color:var(--muted);letter-spacing:2px}
   .by{font-size:12px;color:var(--muted)}.by b{color:var(--txt)}
-  .hero{max-width:900px;margin:0 auto;padding:52px 22px 10px;text-align:center}
-  .chip{display:inline-block;font-size:12px;color:var(--accent);border:1px solid var(--line);border-radius:20px;padding:5px 14px;margin-bottom:18px;background:rgba(255,212,0,.06)}
-  h1{font-size:38px;margin:0 0 10px;line-height:1.1}
+  .hero{max-width:900px;margin:0 auto;padding:48px 22px 8px;text-align:center}
+  .chip{display:inline-block;font-size:12px;color:var(--green);border:1px solid var(--line);border-radius:20px;padding:5px 14px;margin-bottom:16px;background:rgba(34,197,94,.08)}
+  h1{font-size:36px;margin:0 0 10px;line-height:1.1}
   h1 span{background:linear-gradient(135deg,var(--accent),#ff9d00);-webkit-background-clip:text;background-clip:text;color:transparent}
   .sub{color:var(--muted);font-size:16px;max-width:600px;margin:0 auto}
-  .grid{max-width:900px;margin:28px auto;padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:680px){.grid{grid-template-columns:1fr}h1{font-size:29px}}
+  .grid{max-width:960px;margin:26px auto;padding:0 22px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.grid{grid-template-columns:1fr}h1{font-size:28px}}
   a.mod{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;transition:.15s;position:relative}
   a.mod:hover{border-color:var(--accent);transform:translateY(-2px)}
-  a.mod.soon{opacity:.55;pointer-events:none}
-  .ic{font-size:26px}.mod h3{margin:10px 0 4px;font-size:17px}.mod p{margin:0;color:var(--muted);font-size:13px}
-  .badge{position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
-  .b-on{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.35)}
-  .b-soon{background:rgba(139,160,184,.12);color:var(--muted);border:1px solid var(--line)}
-  footer{text-align:center;color:var(--muted);font-size:12px;padding:28px 22px 40px;border-top:1px solid var(--line);margin-top:16px}
+  .ic{font-size:26px}.mod h3{margin:10px 0 4px;font-size:16px}.mod p{margin:0;color:var(--muted);font-size:12.5px}
+  .badge{position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.35)}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:26px 22px 40px;border-top:1px solid var(--line);margin-top:14px}
   footer b{color:var(--txt)}
 </style></head><body>
   <div class="top">
@@ -31,19 +28,21 @@
     <div class="by">Desarrollado por <b>TRIBUDAN AI</b></div>
   </div>
   <div class="hero">
-    <div class="chip">● Módulo activo</div>
+    <div class="chip">● Plataforma activa</div>
     <h1>Control de <span>Gestión Financiera</span></h1>
-    <p class="sub">Cuentas por cobrar y pagar con registro por voz, conciliación automática y reportería en línea.</p>
+    <p class="sub">Cuentas por cobrar y pagar con registro por voz, conciliación y reportería en línea.</p>
   </div>
   <div class="grid">
-    <a class="mod" href="por-pagar.html"><span class="badge b-on">Activo</span><div class="ic">📦</div>
-      <h3>① Por Pagar · Producción</h3><p>Cajas a pagar por productor, con marca, código y observaciones. Exporta a Excel y PDF.</p></a>
-    <a class="mod soon" href="por-cobrar.html"><span class="badge b-soon">Próximamente</span><div class="ic">💳</div>
-      <h3>② Por Cobrar · Deudas</h3><p>Ventas de insumos, anticipos y préstamos del productor, con saldo vivo.</p></a>
-    <a class="mod soon" href="liquidacion.html"><span class="badge b-soon">Próximamente</span><div class="ic">🧮</div>
-      <h3>③ Liquidación</h3><p>Cruza pagos y deudas, aplica descuentos parciales con arrastre y registra el pago.</p></a>
-    <a class="mod soon" href="dashboard.html"><span class="badge b-soon">En rediseño</span><div class="ic">📊</div>
-      <h3>Dashboard</h3><p>KPIs y gráficas en línea, moderno y de fácil comprensión.</p></a>
+    <a class="mod" href="por-pagar.html"><span class="badge">Activo</span><div class="ic">📦</div>
+      <h3>① Por Pagar · Producción</h3><p>Cajas a pagar por productor, con marca, código y observaciones.</p></a>
+    <a class="mod" href="por-cobrar.html"><span class="badge">Activo</span><div class="ic">💳</div>
+      <h3>② Por Cobrar · Deudas</h3><p>Insumos, anticipos, préstamos y venta de banano, con saldo vivo.</p></a>
+    <a class="mod" href="liquidacion.html"><span class="badge">Activo</span><div class="ic">🧮</div>
+      <h3>③ Liquidación</h3><p>Cruza pagos y deudas, descuentos parciales con arrastre.</p></a>
+    <a class="mod" href="pagos.html"><span class="badge">Activo</span><div class="ic">🧾</div>
+      <h3>Pagos · Soportes</h3><p>Método, N° documento y comprobante adjunto (foto/PDF).</p></a>
+    <a class="mod" href="dashboard.html"><span class="badge">Activo</span><div class="ic">📊</div>
+      <h3>Dashboard</h3><p>KPIs, gráficas, filtros y exportación a Excel, PDF y Power BI.</p></a>
   </div>
   <footer><b>TITAN593</b> · Control de Gestión Financiera — desarrollado por <b>TRIBUDAN AI</b><br>
     <span style="font-size:11px">Datos verificables en la nube · © 2026</span></footer>
