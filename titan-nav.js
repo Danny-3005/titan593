@@ -149,6 +149,8 @@
   var vozId = localStorage.getItem('titan_voz_id') || '';
   var vel   = parseFloat(localStorage.getItem('titan_voz_vel') || '1');
   var estilo= localStorage.getItem('titan_voz_estilo') || 'corto';   /* corto | detallado | mudo-texto */
+  var nombre= localStorage.getItem('titan_nombre') || '';            /* a quién saluda */
+  var saludoTxt = localStorage.getItem('titan_saludo') || '';        /* saludo propio (opcional) */
 
   /* REGLA DURA: nunca hablar mientras el micrófono está grabando
      (si no, el micrófono se oye a sí mismo y contamina el dictado) */
@@ -219,10 +221,19 @@
 
   /* saludo al hacer clic en el avatar */
   var modulo = (document.querySelector('.tn-h1') || {}).textContent || 'la plataforma';
-  document.getElementById('taAv').addEventListener('click', function () {
+  function textoSaludo() {
     var h = new Date().getHours();
-    var s = h < 12 ? 'Buenos días' : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
-    decir(s + ', Danny. Estás en ' + modulo + '.', false, true);
+    var hora = h < 12 ? 'Buenos días' : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
+    if (saludoTxt.trim()) {
+      return saludoTxt.replace(/\{nombre\}/gi, nombre || '')
+                      .replace(/\{modulo\}/gi, modulo)
+                      .replace(/\{hora\}/gi, hora)
+                      .replace(/\s{2,}/g, ' ').replace(/\s+,/g, ',').trim();
+    }
+    return hora + (nombre ? ', ' + nombre : '') + '. Estás en ' + modulo + '.';
+  }
+  document.getElementById('taAv').addEventListener('click', function () {
+    decir(textoSaludo(), false, true);
   });
 
   /* reacciona al micrófono de la página */
@@ -280,8 +291,14 @@
     '<div class="ta-row"><span>Mensaje</span><span class="ta-seg">' +
       '<button data-e="corto">Corto</button><button data-e="detallado">Detallado</button><button data-e="mudo-texto">Solo texto</button>' +
     '</span></div>' +
+    '<h4 style="margin-top:10px">Saludo</h4>' +
+    '<label class="ta-row"><span>Nombre</span><input id="taNombre" type="text" placeholder="Danny, Mariela…" maxlength="24"></label>' +
+    '<label class="ta-row ta-col"><span>Saludo propio</span>' +
+      '<textarea id="taSaludo" rows="2" placeholder="Opcional. Ej: {hora}, {nombre}. Bienvenida a TITAN593."></textarea></label>' +
+    '<div class="ta-tip">Puedes usar <b>{nombre}</b>, <b>{hora}</b> y <b>{modulo}</b>. Si lo dejas vacío, saluda automático.</div>' +
     '<div class="ta-row2"><button class="tn-opt" id="taProbar">Probar voz</button>' +
-    '<button class="tn-opt" id="taOnOff"></button></div>';
+    '<button class="tn-opt" id="taSaludar">Probar saludo</button></div>' +
+    '<div class="ta-row2" style="border:0;margin:0;padding-top:0"><button class="tn-opt" id="taOnOff"></button></div>';
   document.body.appendChild(panel);
 
   var selV = document.getElementById('taVoz'), rngV = document.getElementById('taVel');
@@ -311,6 +328,12 @@
   document.getElementById('taProbar').addEventListener('click', function () {
     decir('Neto a cancelar: setecientos veinticinco dólares.', false, true);
   });
+  /* nombre y saludo personalizados */
+  var inN = document.getElementById('taNombre'), inS = document.getElementById('taSaludo');
+  inN.value = nombre; inS.value = saludoTxt;
+  inN.addEventListener('input', function () { nombre = inN.value.trim(); localStorage.setItem('titan_nombre', nombre); });
+  inS.addEventListener('input', function () { saludoTxt = inS.value; localStorage.setItem('titan_saludo', saludoTxt); });
+  document.getElementById('taSaludar').addEventListener('click', function () { decir(textoSaludo(), false, true); });
   document.getElementById('taOnOff').addEventListener('click', function () {
     voz = !voz; localStorage.setItem('titan_voz', voz ? 'on' : 'off');
     pintarMute(); pintarEstilo();

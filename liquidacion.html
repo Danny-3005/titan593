@@ -265,6 +265,8 @@ $("btnSave").onclick=async()=>{
   if(td>tp+0.005){warn("⚠️ Corrige: descuentos mayores que la producción a pagar.");return;}
   if(tp===0 && td===0){warn("⚠️ Nada que liquidar (nada a pagar de producción y sin descuentos).");return;}
   const productor=$("f_prod").value.trim(), periodo=$("f_periodo").value.trim()||null;
+  if(!productor){warn("⚠️ Falta el productor. No se puede guardar en blanco.");$("f_prod").focus();return;}
+  if(tp<=0){warn("⚠️ Debe haber al menos un valor a pagar de producción. No se guarda en blanco.");return;}
   const aplicar=deudas.filter(d=>(+d.descontar||0)>0);
   const pagarProds=prods.filter(p=>(+p.pagar||0)>0);
   const resumen="Liquidación de "+productor+(periodo?" ("+periodo+")":"")

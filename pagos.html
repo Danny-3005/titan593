@@ -202,6 +202,7 @@ $("btnSave").onclick=async()=>{
   if(!liqId){warn("⚠️ Elige la liquidación a pagar.");return;}
   const monto=num($("f_monto").value);
   if(monto<=0){warn("⚠️ Ingresa un monto mayor a 0.");return;}
+  if(!$("f_metodo").value){warn("⚠️ Elige el método de pago (transferencia, cheque o efectivo).");$("f_metodo").focus();return;}
   const btn=$("btnSave");btn.disabled=true;$("upHint").textContent="Guardando…";
   try{
     let soporte_url=null;

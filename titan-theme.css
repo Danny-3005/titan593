@@ -392,10 +392,53 @@ body.titan-shell .wrap{max-width:1180px; margin:0 auto; padding:20px 22px}
 .ta-row2{gap:6px; padding-top:8px; margin-top:4px; border-top:1px solid var(--line)}
 .ta-row2 .tn-opt{justify-content:center; font-size:12px !important; min-height:34px !important;
   border:1px solid var(--line) !important; background:var(--card2) !important}
+.ta-row.ta-col{flex-direction:column; align-items:stretch; gap:4px}
+.ta-row.ta-col>span:first-child{flex:none}
+.ta-row input[type=text],.ta-row textarea{flex:1; width:100%; min-height:32px !important;
+  font-size:12px !important; padding:6px 9px !important}
+.ta-row textarea{min-height:48px !important; resize:vertical}
+.ta-tip{padding:2px 8px 6px; font-size:10.5px; color:var(--muted); line-height:1.4}
+.ta-tip b{color:var(--accent); font-weight:700}
 @media (max-width:900px){
   .ta-wrap{right:12px; bottom:80px}
   .ta-av{width:60px; height:60px}
   .ta-bubble{max-width:220px; font-size:12.5px}
+}
+
+/* ===================================================================
+   SISTEMA DE BOTONES · 3 alturas coherentes (auditado con Playwright)
+   Grande 46px (acciones) · Medio 38px (herramientas) · Chico 30px (chips)
+   =================================================================== */
+button.act{
+  min-height:46px !important; height:46px; padding:0 18px !important;
+  font-size:14.5px !important; white-space:nowrap; display:inline-flex;
+  align-items:center; justify-content:center; gap:7px; line-height:1;
+}
+.exp-btns button,.tn-theme,.tn-back,.ta-row2 .tn-opt,.tn-opt{
+  min-height:38px !important; height:38px; padding:0 14px !important;
+  font-size:12.5px !important; white-space:nowrap; display:inline-flex;
+  align-items:center; gap:6px; line-height:1;
+}
+.tn-opt{justify-content:flex-start}
+.tn-item{min-height:48px}
+.cols label{min-height:30px !important; padding:0 10px !important; align-items:center}
+.act-btns button{min-height:32px !important; height:32px; padding:0 9px !important; font-size:11.5px !important}
+.ta-mute{min-height:30px !important; height:30px; padding:0 11px !important; font-size:11px !important}
+.ta-seg button{min-height:32px !important; height:32px}
+.descIn,.pagarIn{min-height:38px !important}
+/* el micrófono es el botón principal: se queda grande a propósito */
+#mic{width:84px !important; height:84px !important}
+
+@media (max-width:900px){
+  /* en el celular cada acción ocupa su propia línea completa: nada se deforma */
+  .btns{flex-direction:column}
+  .btns button.act{width:100%; flex:none}
+  .exp-btns{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .exp-btns button{width:100%; height:42px; min-height:42px !important; justify-content:center}
+  #mic{width:76px !important; height:76px !important}
+  button.act{font-size:14px !important}
+  .act-btns button{min-height:36px !important; height:36px; padding:0 12px !important}
+  .act-btns{display:flex; gap:6px; flex-wrap:wrap}
 }
 
 @keyframes titanIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}

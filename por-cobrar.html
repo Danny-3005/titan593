@@ -328,7 +328,29 @@ function pintar(){
 }
 cargar();
 
+/* ---- Validación: no permitir registros en blanco ---- */
+function marcaError(id,on){const e=$(id);if(!e)return;e.style.borderColor=on?"var(--neg,#b91c1c)":"";e.style.boxShadow=on?"0 0 0 2px rgba(185,28,28,.25)":"";}
+function validar(){
+  const faltan=[], prod=$("f_prod").value.trim();
+  const esBanano=$("f_tipo").value==="venta_banano";
+  const valor=num($("f_valor").value), cajas=num($("f_cajas").value), pvu=num($("f_pvu").value);
+  const monto = esBanano && cajas>0 && pvu>0 ? cajas*pvu : valor;
+  marcaError("f_prod",!prod); if(!prod) faltan.push("Productor");
+  const sinMonto = monto<=0;
+  marcaError("f_valor",sinMonto && !esBanano);
+  marcaError("f_cajas",sinMonto && esBanano); marcaError("f_pvu",sinMonto && esBanano);
+  if(sinMonto) faltan.push(esBanano?"Cajas y precio (o el valor) mayores a 0":"Valor de la deuda (mayor a 0)");
+  const con=$("f_concepto").value.trim();
+  marcaError("f_concepto",!con); if(!con) faltan.push("Concepto (ej: fundas, anticipo, préstamo)");
+  if(faltan.length){
+    alert("No se puede guardar en blanco.\n\nFalta:\n• "+faltan.join("\n• "));
+    (!prod?$("f_prod"):(sinMonto?(esBanano?$("f_cajas"):$("f_valor")):$("f_concepto"))).focus();
+    return false;
+  }
+  return true;
+}
 $("btnSave").onclick=async()=>{
+  if(!validar())return;
   const btn=$("btnSave");btn.disabled=true;
   try{
     if(editId!=null){const up=await fetch(SB_URL+"/rest/v1/cobros?id=eq."+editId,{method:"PATCH",headers:SB_H,body:JSON.stringify(toDB())});if(!up.ok)throw new Error("HTTP "+up.status);editId=null;$("editHint").style.display="none";}
@@ -364,13 +386,48 @@ $("btnPDF").onclick=()=>{const d=datosExport();if(!d)return;if(!filas.length){al
   w.document.close();setTimeout(()=>w.print(),300);};
 
 // ---- Voz ----
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,escuchando=false;
-if(!SR){$("warn").style.display="block";$("warn").innerHTML="⚠️ Usa Chrome (PC o Android) para el micrófono.";}
-else{rec=new SR();rec.lang="es-EC";rec.continuous=true;rec.interimResults=true;let ft="";
-  rec.onresult=e=>{let int="";for(let i=e.resultIndex;i<e.results.length;i++){const tr=e.results[i][0].transcript;if(e.results[i].isFinal)ft+=" "+tr;else int+=tr;}$("transcript").innerHTML=`${ft} <span class="interim">${int}</span>`;aplicar(parseCobro(ft+" "+int));};
-  rec.onerror=e=>{$("micHint").textContent="Error mic: "+e.error;};
-  rec.onend=()=>{if(escuchando){try{rec.start();return;}catch(e){}}$("mic").classList.remove("rec");$("micHint").textContent="Dicta la deuda a cobrar";};
-  $("mic").onclick=()=>{if(escuchando){escuchando=false;rec.stop();return;}ft="";escuchando=true;try{rec.start();$("mic").classList.add("rec");$("micHint").textContent="🔴 Escuchando…";}catch(e){escuchando=false;}};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const esIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const esMovil=esIOS||/Android/i.test(navigator.userAgent);
+let rec=null,escuchando=false,ft="";
+const HINT="Dicta la deuda a cobrar";
+function avisoVoz(html){const w=$("warn");w.innerHTML=html;w.style.display=html?"block":"none";}
+async function permisoMic(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return true;
+  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());return true;}
+  catch(e){avisoVoz("🎤 <b>Falta permiso del micrófono.</b> Toca el candado 🔒 (o los ⋮ del navegador) → <b>Permisos del sitio</b> → <b>Micrófono</b> → <b>Permitir</b>, y recarga la página.");return false;}
+}
+if(!SR){
+  avisoVoz(esIOS
+    ? "⚠️ <b>iPhone/iPad no permite dictar en la web.</b> Usa el <b>micrófono del teclado</b>: toca un campo, y en el teclado toca el 🎤 y dicta. También puedes escribir normal."
+    : "⚠️ Para dictar por voz usa <b>Chrome</b> (en PC o Android).");
+  $("mic").style.opacity=".45";$("micHint").textContent="Dictado por voz no disponible en este navegador";
+  $("mic").onclick=()=>avisoVoz($("warn").innerHTML);
+}else{
+  rec=new SR();rec.lang="es-EC";rec.interimResults=true;rec.maxAlternatives=1;
+  rec.continuous=!esMovil;   /* en celular funciona mejor sin continuo + reinicio automático */
+  rec.onresult=e=>{let int="";for(let i=e.resultIndex;i<e.results.length;i++){const tr=e.results[i][0].transcript;if(e.results[i].isFinal)ft+=" "+tr;else int+=tr;}
+    $("transcript").innerHTML=`${ft} <span class="interim">${int}</span>`;aplicar(parseCobro(ft+" "+int));};
+  rec.onerror=e=>{
+    const E=e.error;
+    if(E==="not-allowed"||E==="service-not-allowed"){escuchando=false;
+      avisoVoz("🎤 <b>El micrófono está bloqueado.</b> Toca el candado 🔒 en la barra de direcciones → <b>Permisos</b> → <b>Micrófono</b> → <b>Permitir</b>, y recarga.");}
+    else if(E==="no-speech"){$("micHint").textContent="No escuché nada. Habla más cerca del teléfono.";}
+    else if(E==="audio-capture"){escuchando=false;avisoVoz("🎤 No encuentro micrófono en este equipo.");}
+    else if(E==="network"){avisoVoz("📡 El dictado necesita internet. Revisa tu conexión.");}
+    else if(E!=="aborted"){$("micHint").textContent="Problema con el micrófono ("+E+"). Toca otra vez.";}
+  };
+  rec.onend=()=>{
+    if(escuchando){setTimeout(()=>{if(escuchando){try{rec.start();}catch(e){}}},250);return;}
+    $("mic").classList.remove("rec");$("micHint").textContent=HINT;
+  };
+  $("mic").onclick=async()=>{
+    if(escuchando){escuchando=false;try{rec.stop();}catch(e){}return;}
+    if(!(await permisoMic()))return;
+    avisoVoz("");ft="";escuchando=true;
+    try{rec.start();$("mic").classList.add("rec");$("micHint").textContent="🔴 Escuchando… toca otra vez para terminar";}
+    catch(e){escuchando=false;$("micHint").textContent="No pude iniciar el micrófono. Toca de nuevo.";}
+  };
 }
 </script>
 <div class="modal-bg" id="modalBg"><div class="modal">

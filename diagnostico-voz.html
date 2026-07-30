@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnóstico de voz · TITAN593</title>
+<style>
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#0f141a;color:#eaf1f8;line-height:1.5;padding:18px}
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{color:#8ca3b8;font-size:13px;margin-bottom:16px}
+  .card{background:#161e27;border:1px solid #26313d;border-radius:14px;padding:14px;margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #202a35;font-size:13.5px}
+  .row:last-child{border:0}
+  .row b{color:#8ca3b8;font-weight:600;flex:0 0 46%}
+  .ok{color:#4ade80;font-weight:700}.bad{color:#f87171;font-weight:700}.warn{color:#fbbf24;font-weight:700}
+  button{width:100%;min-height:52px;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
+  #probar{background:linear-gradient(135deg,#ffd400,#ffa800);color:#111}
+  #probar.rec{background:linear-gradient(135deg,#ff5a5a,#dc2626);color:#fff}
+  #copiar{background:#26313d;color:#eaf1f8}
+  #oido{min-height:70px;background:#0b1017;border:1px solid #26313d;border-radius:12px;padding:11px;font-size:15px;margin-top:10px}
+  #estado{font-size:14px;margin-top:8px;color:#8ca3b8;text-align:center}
+  #err{display:none;background:#3a0f0f;border:1px solid #7f1d1d;color:#fecaca;border-radius:12px;padding:11px;font-size:13.5px;margin-top:10px}
+  .tip{font-size:12.5px;color:#8ca3b8;margin-top:10px}
+  a{color:#ffd400}
+</style></head><body>
+<h1>🎤 Diagnóstico de voz</h1>
+<div class="sub">Abre esta página <b>en el celular</b>, toca Probar y manda una foto del resultado.</div>
+
+<div class="card" id="info"></div>
+
+<div class="card">
+  <button id="probar">🎤 Probar micrófono</button>
+  <div id="estado">Toca el botón y di: “cien cajas a siete veinticinco”</div>
+  <div id="oido"><i style="color:#8ca3b8">Aquí aparece lo que se escucha…</i></div>
+  <div id="err"></div>
+  <button id="copiar">📋 Copiar informe</button>
+  <div class="tip">Si el botón no hace nada, o sale un error, esa es la pista que necesito.</div>
+</div>
+
+<div class="card" style="font-size:13px">
+  <b style="color:#ffd400">Volver a la plataforma:</b><br>
+  <a href="index.html">index.html</a> · <a href="por-pagar.html">Por Pagar</a>
+</div>
+
+<script>
+var L=[];
+function fila(k,v,cls){L.push([k,v,cls||'']);}
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var ua=navigator.userAgent;
+var esIOS=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+var esAndroid=/Android/i.test(ua);
+var esChrome=/Chrome|CriOS/i.test(ua), esSafari=/Safari/i.test(ua)&&!/Chrome|CriOS/i.test(ua);
+var seguro=window.isSecureContext;
+
+fila('Sistema', esIOS?'iPhone / iPad':(esAndroid?'Android':'Computadora'));
+fila('Navegador', /CriOS/i.test(ua)?'Chrome en iPhone':(esChrome?'Chrome':(esSafari?'Safari':'Otro')));
+fila('Conexión segura (https)', seguro?'Sí':'NO', seguro?'ok':'bad');
+fila('Soporta dictado web', SR?'Sí':'NO', SR?'ok':'bad');
+fila('Reconoce micrófonos', (navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?'Sí':'NO', (navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?'ok':'bad');
+fila('Dirección', location.protocol+'//'+location.host);
+
+function pintar(){
+  document.getElementById('info').innerHTML=L.map(function(f){
+    return '<div class="row"><b>'+f[0]+'</b><span class="'+f[2]+'">'+f[1]+'</span></div>';}).join('');
+}
+pintar();
+
+/* estado del permiso */
+if(navigator.permissions&&navigator.permissions.query){
+  navigator.permissions.query({name:'microphone'}).then(function(p){
+    fila('Permiso de micrófono', p.state==='granted'?'Concedido':(p.state==='denied'?'BLOQUEADO':'Preguntará'),
+         p.state==='granted'?'ok':(p.state==='denied'?'bad':'warn'));
+    pintar();
+  }).catch(function(){});
+}
+
+var rec=null, escuchando=false, txt='';
+var bp=document.getElementById('probar'), es=document.getElementById('estado'),
+    oido=document.getElementById('oido'), errBox=document.getElementById('err');
+
+function mostrarError(msg){errBox.style.display='block';errBox.innerHTML=msg;}
+
+if(!SR){
+  bp.textContent='🚫 Este navegador no dicta';
+  mostrarError(esIOS
+    ? '<b>iPhone/iPad no permite dictado web.</b> Usa el <b>micrófono del teclado</b>: toca un campo de texto y luego el 🎤 del teclado.'
+    : '<b>No hay soporte.</b> Instala <b>Chrome</b> y ábrelo ahí.');
+}else{
+  rec=new SR(); rec.lang='es-EC'; rec.interimResults=true;
+  rec.continuous=!(esIOS||esAndroid);
+  rec.onresult=function(e){
+    var fin='',int='';
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) fin+=e.results[i][0].transcript; else int+=e.results[i][0].transcript;
+    }
+    if(fin) txt+=' '+fin;
+    oido.innerHTML='<b style="color:#4ade80">'+txt+'</b> <i style="color:#8ca3b8">'+int+'</i>';
+  };
+  rec.onerror=function(e){
+    var t={'not-allowed':'Permiso NEGADO. Toca el candado 🔒 → Permisos → Micrófono → Permitir.',
+      'service-not-allowed':'El sistema bloquea el dictado. Revisa permisos del navegador.',
+      'no-speech':'No se escuchó nada. Habla más cerca.',
+      'audio-capture':'No encuentra micrófono.',
+      'network':'Necesita internet y no hay conexión estable.',
+      'aborted':'Se canceló.'};
+    mostrarError('<b>Error: '+e.error+'</b><br>'+(t[e.error]||'Error desconocido.'));
+    fila('Último error', e.error, 'bad'); pintar();
+  };
+  rec.onend=function(){
+    if(escuchando){ setTimeout(function(){ if(escuchando){ try{rec.start();}catch(e){} } },250); return; }
+    bp.classList.remove('rec'); bp.textContent='🎤 Probar micrófono'; es.textContent='Prueba terminada. ¿Apareció texto arriba?';
+  };
+  bp.onclick=function(){
+    if(escuchando){ escuchando=false; try{rec.stop();}catch(e){} return; }
+    errBox.style.display='none'; txt=''; oido.innerHTML='<i style="color:#8ca3b8">Escuchando…</i>';
+    if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+      navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+        s.getTracks().forEach(function(t){t.stop();}); iniciar();
+      }).catch(function(err){
+        mostrarError('<b>No se pudo abrir el micrófono ('+err.name+').</b><br>Toca el candado 🔒 → Permisos → Micrófono → Permitir, y recarga.');
+        fila('Permiso', 'RECHAZADO ('+err.name+')','bad'); pintar();
+      });
+    } else iniciar();
+  };
+  function iniciar(){
+    escuchando=true;
+    try{ rec.start(); bp.classList.add('rec'); bp.textContent='⏹ Detener'; es.textContent='🔴 Habla ahora…'; }
+    catch(e){ escuchando=false; mostrarError('<b>No pudo iniciar:</b> '+e.message); }
+  }
+}
+
+document.getElementById('copiar').onclick=function(){
+  var t='DIAGNÓSTICO VOZ TITAN593\n'+L.map(function(f){return f[0]+': '+f[1];}).join('\n')+
+        '\nEscuchado: '+(txt||'(nada)')+'\nUA: '+ua;
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){alert('Informe copiado. Pégalo en el chat.');},function(){alert(t);});
+  else alert(t);
+};
+</script>
+</body></html>
