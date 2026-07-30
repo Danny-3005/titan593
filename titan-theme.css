@@ -378,7 +378,20 @@ body.titan-shell .wrap{max-width:1180px; margin:0 auto; padding:20px 22px}
 }
 .ta-mute:hover{color:var(--accent) !important; border-color:var(--accent) !important}
 .ta-mute{opacity:0; transition:opacity .2s var(--ease)}
-.ta-wrap:hover .ta-mute,.ta-wrap:focus-within .ta-mute{opacity:1}
+.ta-wrap:hover .ta-mute,.ta-wrap:focus-within .ta-mute,.ta-panel.on ~ .ta-wrap .ta-mute{opacity:1}
+/* panel de voz */
+.ta-panel{top:auto; bottom:110px; right:20px; width:262px}
+.ta-row,.ta-row2{display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:12px; color:var(--muted)}
+.ta-row>span:first-child{flex:0 0 66px; font-weight:700}
+.ta-row select,.ta-row input[type=range]{flex:1; min-height:32px !important; font-size:12px !important}
+.ta-seg{display:flex; gap:4px; flex:1}
+.ta-seg button{flex:1; min-height:30px !important; padding:0 6px !important; font-size:10.5px !important;
+  border-radius:8px !important; background:var(--card2) !important; color:var(--muted) !important;
+  border:1px solid var(--line) !important; font-weight:700 !important}
+.ta-seg button.on{background:var(--accent) !important; color:var(--on-accent) !important; border-color:transparent !important}
+.ta-row2{gap:6px; padding-top:8px; margin-top:4px; border-top:1px solid var(--line)}
+.ta-row2 .tn-opt{justify-content:center; font-size:12px !important; min-height:34px !important;
+  border:1px solid var(--line) !important; background:var(--card2) !important}
 @media (max-width:900px){
   .ta-wrap{right:12px; bottom:80px}
   .ta-av{width:60px; height:60px}

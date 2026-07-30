@@ -145,7 +145,24 @@
   var IMG_LOCAL = 'asistente.png';
   var IMG_WEB = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCGnlzRYTaN2wnPwNo2cwcYBSt7ePXxIPr5MbgEwRXA7YVmeLiqPL-M5WCybZNinagaQpE20WOJMpSa_1P7GTRZZgsP4JZvKbe_Y8XTtRJd86JSe8I9_s37wCP3xwUTw8sVaAJGRiiXD5GDUYjmBf8raIVVA0yQhJ77_xenOuLgtiB8-9w2OvozO3b7bGvN6fLMTDF52myf0VGuCvYVWgp2ygWlrmfUAB40Lr2bhdmE7HWYbeVFhXpc';
 
-  var voz = localStorage.getItem('titan_voz') !== 'off';
+  var voz   = localStorage.getItem('titan_voz') !== 'off';
+  var vozId = localStorage.getItem('titan_voz_id') || '';
+  var vel   = parseFloat(localStorage.getItem('titan_voz_vel') || '1');
+  var estilo= localStorage.getItem('titan_voz_estilo') || 'corto';   /* corto | detallado | mudo-texto */
+
+  /* REGLA DURA: nunca hablar mientras el micrófono está grabando
+     (si no, el micrófono se oye a sí mismo y contamina el dictado) */
+  function micGrabando() {
+    var m = document.getElementById('mic');
+    return !!(m && m.classList.contains('rec'));
+  }
+  function puedeHablar() { return voz && !micGrabando() && window.speechSynthesis; }
+  function vozElegida() {
+    if (!window.speechSynthesis) return null;
+    var vs = speechSynthesis.getVoices();
+    return vs.filter(function (v) { return v.voiceURI === vozId || v.name === vozId; })[0] ||
+           vs.filter(function (v) { return /^es/i.test(v.lang); })[0] || null;
+  }
 
   var wrap = document.createElement('div');
   wrap.className = 'ta-wrap';
@@ -177,11 +194,12 @@
     bubble.classList.add('on');
     clearTimeout(tOcultar);
     tOcultar = setTimeout(function () { bubble.classList.remove('on'); }, eco ? 4000 : 9000);
-    if (hablar && voz && window.speechSynthesis) {
+    if (hablar && puedeHablar()) {
       try {
         speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(txt.replace(/<[^>]+>/g, ''));
-        u.lang = 'es-EC'; u.rate = 1.02;
+        u.lang = 'es-EC'; u.rate = vel;
+        var vv = vozElegida(); if (vv) { u.voice = vv; u.lang = vv.lang; }
         u.onstart = function () { wrap.classList.add('talking'); };
         u.onend = function () { wrap.classList.remove('talking'); };
         speechSynthesis.speak(u);
@@ -192,14 +210,11 @@
 
   /* botón de voz */
   var bm = document.getElementById('taMute');
-  function pintarMute() { bm.textContent = voz ? '🔊 Voz activa' : '🔇 Voz apagada'; }
+  function pintarMute() { bm.textContent = (voz ? '🔊' : '🔇') + ' Voz ▾'; }
   pintarMute();
-  bm.addEventListener('click', function () {
-    voz = !voz;
-    localStorage.setItem('titan_voz', voz ? 'on' : 'off');
-    pintarMute();
-    if (voz) decir('Voz activada. Te confirmo cada registro.', false, true);
-    else { if (window.speechSynthesis) speechSynthesis.cancel(); decir('Voz apagada.', false, false); }
+  bm.addEventListener('click', function (e) {
+    e.stopPropagation();
+    document.getElementById('taPanel').classList.toggle('on');
   });
 
   /* saludo al hacer clic en el avatar */
@@ -207,7 +222,7 @@
   document.getElementById('taAv').addEventListener('click', function () {
     var h = new Date().getHours();
     var s = h < 12 ? 'Buenos días' : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
-    decir(s + ', Danny. Estás en ' + modulo + '. Toca el micrófono y dicta; yo te confirmo el resultado.', false, true);
+    decir(s + ', Danny. Estás en ' + modulo + '.', false, true);
   });
 
   /* reacciona al micrófono de la página */
@@ -216,8 +231,11 @@
     new MutationObserver(function () {
       var rec = mic.classList.contains('rec');
       wrap.classList.toggle('listening', rec);
-      if (rec) decir('Escuchando…', false, false);
-      else setTimeout(resumir, 700);
+      if (rec) {
+        if (window.speechSynthesis) speechSynthesis.cancel();  /* callar de inmediato */
+        wrap.classList.remove('talking');
+        decir('Escuchando…', false, false);
+      } else setTimeout(resumir, 900);
     }).observe(mic, { attributes: true, attributeFilter: ['class'] });
   }
 
@@ -243,10 +261,62 @@
     if (neto) partes.push('neto ' + neto);
     else if (valor && valor !== '$0,00') partes.push('valor ' + valor);
     else if (saldo) partes.push('saldo ' + saldo);
-    if (!partes.length) { decir('No capté datos. Toca el micrófono e intenta de nuevo.', false, true); return; }
-    var msg = partes.join(', ') + '.';
+    if (!partes.length) { decir('No capté datos.', false, true); return; }
     var n = parseFloat((neto || '').replace(/[^0-9,-]/g, '').replace(',', '.'));
-    if (!isNaN(n) && n < 0) msg += ' Atención: el neto salió negativo, revísalo antes de guardar.';
-    decir('Listo. ' + msg + ' Revisa y guarda.', false, true);
+    var alerta = (!isNaN(n) && n < 0) ? ' Ojo: neto negativo.' : '';
+    var msg;
+    if (estilo === 'detallado') msg = 'Listo. ' + partes.join(', ') + '.' + alerta + ' Revisa y guarda.';
+    else msg = (neto ? 'Neto ' + neto : partes[partes.length - 1]) + '.' + alerta;   /* corto */
+    decir(msg, false, estilo !== 'mudo-texto');
   }
+
+  /* ---------- Panel de voz: elegir voz, velocidad y qué dice ---------- */
+  var panel = document.createElement('div');
+  panel.className = 'tn-pop ta-panel'; panel.id = 'taPanel';
+  panel.innerHTML =
+    '<h4>Voz del asistente</h4>' +
+    '<label class="ta-row"><span>Voz</span><select id="taVoz"></select></label>' +
+    '<label class="ta-row"><span>Velocidad</span><input id="taVel" type="range" min="0.7" max="1.4" step="0.05"></label>' +
+    '<div class="ta-row"><span>Mensaje</span><span class="ta-seg">' +
+      '<button data-e="corto">Corto</button><button data-e="detallado">Detallado</button><button data-e="mudo-texto">Solo texto</button>' +
+    '</span></div>' +
+    '<div class="ta-row2"><button class="tn-opt" id="taProbar">Probar voz</button>' +
+    '<button class="tn-opt" id="taOnOff"></button></div>';
+  document.body.appendChild(panel);
+
+  var selV = document.getElementById('taVoz'), rngV = document.getElementById('taVel');
+  function cargarVoces() {
+    if (!window.speechSynthesis) { selV.innerHTML = '<option>No disponible</option>'; return; }
+    var vs = speechSynthesis.getVoices().filter(function (v) { return /^es/i.test(v.lang); });
+    if (!vs.length) vs = speechSynthesis.getVoices();
+    selV.innerHTML = vs.map(function (v) {
+      return '<option value="' + v.voiceURI + '"' + ((v.voiceURI === vozId) ? ' selected' : '') + '>' +
+             v.name.replace(/Microsoft |Google /, '') + ' · ' + v.lang + '</option>';
+    }).join('') || '<option>Sin voces en español</option>';
+  }
+  cargarVoces();
+  if (window.speechSynthesis) speechSynthesis.onvoiceschanged = cargarVoces;
+  rngV.value = vel;
+  function pintarEstilo() {
+    panel.querySelectorAll('.ta-seg button').forEach(function (b) { b.classList.toggle('on', b.dataset.e === estilo); });
+    document.getElementById('taOnOff').textContent = voz ? '🔊 Apagar voz' : '🔇 Prender voz';
+  }
+  pintarEstilo();
+
+  selV.addEventListener('change', function () { vozId = selV.value; localStorage.setItem('titan_voz_id', vozId); });
+  rngV.addEventListener('change', function () { vel = parseFloat(rngV.value); localStorage.setItem('titan_voz_vel', vel); });
+  panel.querySelectorAll('.ta-seg button').forEach(function (b) {
+    b.addEventListener('click', function () { estilo = b.dataset.e; localStorage.setItem('titan_voz_estilo', estilo); pintarEstilo(); });
+  });
+  document.getElementById('taProbar').addEventListener('click', function () {
+    decir('Neto a cancelar: setecientos veinticinco dólares.', false, true);
+  });
+  document.getElementById('taOnOff').addEventListener('click', function () {
+    voz = !voz; localStorage.setItem('titan_voz', voz ? 'on' : 'off');
+    pintarMute(); pintarEstilo();
+    if (!voz && window.speechSynthesis) speechSynthesis.cancel();
+  });
+  document.addEventListener('click', function (e) {
+    if (!panel.contains(e.target) && e.target !== bm) panel.classList.remove('on');
+  });
 })();
