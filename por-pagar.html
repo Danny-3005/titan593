@@ -158,8 +158,18 @@ function parseProd(textoRaw){
    while(am=aRe.exec(t)){const nm=[];let st=false;for(const w of t.slice(am.index+am[0].length).split(/\s+/)){const c=w.replace(/[^a-záéíóúñüA-ZÁÉÍÓÚÑÜ]/g,"");if(!c)break;const n=norm(c);if(!st){if(CN.has(n))continue;st=true;}if(STOP.has(n))break;nm.push(c.charAt(0).toUpperCase()+c.slice(1).toLowerCase());if(nm.length>=3)break;}if(nm.length)np=nm.join(" ");}if(np)out.prod=np;}
   if(out.prod==null)for(const p of PRODUCTORES){const ps=norm(p).split(" ").filter(x=>x.length>2);if(ps.some(x=>nt.includes(x))){out.prod=p;break;}}
   let m=last(/(?:semana|week|wk|sem)\s*(\d+)/);if(m)out.sem="WK "+m[1];
-  m=last(/(?<!(?:semana|wk|sem)\s)(?<!\d)(\d+(?:\.\d+)?)\s*cajas\b/)||last(/\bcajas\s+(\d+(?:\.\d+)?)/);if(m)out.cajas=parseFloat(m[1]);
-  m=last(/(?:pvu|precio|valor de la caja|valor caja)\D{0,15}?(\d+(?:\.\d+)?)/)||last(/(?:\ba\b|por caja)\s+(\d+(?:\.\d+)?)/);if(m)out.pvu=parseFloat(m[1]);
+  /* Chrome a veces oye "caja" sin la s. Aceptamos singular y plural, pero primero
+     quitamos la palabra "caja" cuando pertenece al PRECIO ("precio de la caja 7" -> "precio 7")
+     para que no se confunda con la cantidad de cajas. */
+  const lastIn=(t,re)=>{let r=null,x;const g=new RegExp(re.source,"g");while(x=g.exec(t))r=x;return r;};
+  const ntc=nt.replace(/\b(precio|valor|pvu)(\s+de)?(\s+la)?\s+cajas?\b/g,"$1")
+              .replace(/\bpor\s+cajas?\b/g,"por-caja");
+  m=lastIn(ntc,/(?<!(?:semana|wk|sem)\s)(?<!\d)(\d+(?:\.\d+)?)\s*cajas?\b/)
+   ||lastIn(ntc,/\b(?:numero|cantidad)?\s*de?\s*cajas?\s+(\d+(?:\.\d+)?)/)
+   ||lastIn(ntc,/\bcajas?\s+(\d+(?:\.\d+)?)/);
+  if(m)out.cajas=parseFloat(m[1]);
+  m=lastIn(ntc,/(?:pvu|precio|valor)\D{0,15}?(\d+(?:\.\d+)?)/)||lastIn(ntc,/(?:\ba\b|por-caja)\s+(\d+(?:\.\d+)?)/);
+  if(m)out.pvu=parseFloat(m[1]);
   // Marca: "marca X" o marcas conocidas
   let mm=last(/\bmarca\s+([a-z0-9 ]{2,}?)(?=\s+(?:codigo|c[oó]digo|observaci|nota|semana|caja|precio|productor|corregir|corrige|marca|factura|fecha)|\s*$)/);
   if(mm)out.marca=mm[1].trim().toUpperCase();

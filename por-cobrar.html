@@ -214,8 +214,12 @@ function corrSeg(sN,sC,out){
   {const x=sN.match(/\bconcepto\s+([a-z0-9 ]+?)(?=\s+(?:tipo|valor|monto|cantidad|semana|anticipo|prestamo|marca|c[oó]digo|empresa|factura)|\s*$)/);if(x&&x[1].trim())out.concepto=x[1].trim();}
   {const x=sN.match(/\bmarca\s+([a-z0-9 ]+?)(?=\s+(?:codigo|c[oó]digo|tipo|valor|cantidad|semana|empresa|factura|fecha|cajas|precio|concepto)|\s*$)/);if(x&&x[1].trim())out.marca=x[1].trim().toUpperCase();}
   {const x=sN.match(/\bc[oó]digo\s+([a-z0-9 ]+?)(?=\s+(?:marca|tipo|valor|cantidad|semana|empresa|factura|concepto)|\s*$)/);if(x&&x[1].trim())out.codigo=certNorm(x[1]);}
-  {const m=sN.match(/(\d+(?:\.\d+)?)\s*cajas\b|\bcajas\s+(\d+(?:\.\d+)?)/);if(m)out.cajas=parseFloat(m[1]||m[2]);}
-  {const m=sN.match(/(?:precio(?:\s+de(?:\s+la)?\s+caja)?|por\s+caja)\D{0,8}?(\d+(?:\.\d+)?)/);if(m)out.pvu=parseFloat(m[1]);}
+  /* acepta "caja" sin s (Chrome la oye singular) sin confundir con el precio */
+  {const sC=sN.replace(/\b(precio|valor|pvu)(\s+de)?(\s+la)?\s+cajas?\b/g,"$1").replace(/\bpor\s+cajas?\b/g,"por-caja");
+   const m=sC.match(/(?<!(?:semana|wk|sem)\s)(?<!\d)(\d+(?:\.\d+)?)\s*cajas?\b/)||sC.match(/\bcajas?\s+(\d+(?:\.\d+)?)/);
+   if(m)out.cajas=parseFloat(m[1]);
+   const p=sC.match(/(?:precio|pvu)\D{0,10}?(\d+(?:\.\d+)?)/)||sC.match(/\bpor-caja\s+(\d+(?:\.\d+)?)/);
+   if(p)out.pvu=parseFloat(p[1]);}
   {const mf=sN.match(/(?<!\bfecha (?:de (?:la )?)?)\bfactura\b(?:\s*(?:numero|nro|no|num|#))?\s*(\d+)/);if(mf)out.factura=mf[1];}
   {const i=afterLast(sN,/\bfecha\b/);if(i>=0){const f=parseFecha(sN.slice(i));if(f)out.fechafac=f;}}
 }
@@ -252,8 +256,11 @@ function parseCobro(textoRaw){
   {const me=baseC.match(/\bempresa\s+([A-Za-zÁÉÍÓÚÑáéíóúñ .&]+?)(?=\s+(?:factura|marca|c[oó]digo|observaci|semana|valor|cantidad|concepto|tipo|cajas|caja|precio|\d)|\s*$)/i);
    if(me&&me[1].trim()){out.empresa=me[1].trim();out.tipo="venta_banano";}}
   // Cajas y precio de caja (venta banano)
-  {const mca=L(baseN,/(\d+(?:\.\d+)?)\s*cajas\b/)||L(baseN,/\bcajas\s+(\d+(?:\.\d+)?)/);if(mca)out.cajas=parseFloat(mca[1]);}
-  {const mp=L(baseN,/(?:precio(?:\s+de(?:\s+la)?\s+caja)?|valor\s+de\s+la\s+caja|por\s+caja)\D{0,8}?(\d+(?:\.\d+)?)/)||L(baseN,/\ba\s+(\d+(?:\.\d+)?)/);if(mp)out.pvu=parseFloat(mp[1]);}
+  {const bC=baseN.replace(/\b(precio|valor|pvu)(\s+de)?(\s+la)?\s+cajas?\b/g,"$1").replace(/\bpor\s+cajas?\b/g,"por-caja");
+   const mca=L(bC,/(?<!(?:semana|wk|sem)\s)(?<!\d)(\d+(?:\.\d+)?)\s*cajas?\b/)||L(bC,/\bcajas?\s+(\d+(?:\.\d+)?)/);
+   if(mca)out.cajas=parseFloat(mca[1]);
+   const mp=L(bC,/(?:precio|pvu)\D{0,10}?(\d+(?:\.\d+)?)/)||L(bC,/\bpor-caja\s+(\d+(?:\.\d+)?)/)||L(bC,/\ba\s+(\d+(?:\.\d+)?)/);
+   if(mp)out.pvu=parseFloat(mp[1]);}
   // # Factura (no confundir con "fecha (de) factura")
   {const mf=baseN.match(/(?<!\bfecha (?:de (?:la )?)?)\bfactura\b(?:\s*(?:numero|nro|no|num|#))?\s*(\d+)/);if(mf)out.factura=mf[1];}
   // Fecha factura (tras "fecha")
